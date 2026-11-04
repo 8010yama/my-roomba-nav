@@ -1,0 +1,21 @@
+pico_bridge:
+  ros__parameters:
+    port: /dev/ttyACM0          # Pico の USB シリアル（ls /dev/ttyACM* で確認）
+    # ---- ロボットの寸法（実物を測って書き換える）----
+    wheel_diameter: 0.065       # タイヤの直径 [m]                       ← 要計測（仮）
+    track_width: 0.173           # 左右のタイヤの中心どうしの距離 [m]     ← 要計測（仮）
+    ticks_per_rev: 1578.0       # タイヤ1回転のカウント数（4逓倍）       ← 要計測（仮）
+    # ---- 通信と安全 ----
+    telemetry_hz: 50.0          # Pico から受け取る回数 [回/秒]
+    cmd_timeout: 0.5            # /cmd_vel が途切れてから止めるまで [秒]
+    brush_timeout: 1.0          # /brush が途切れてからブラシを止めるまで [秒]
+    max_linear: 0.3             # 前後の速さの上限 [m/s]
+    max_angular: 2.0            # 回る速さの上限 [rad/s]
+    deadband_linear: 0.02       # これより小さい前後の速さは 0（スティックの戻りきらない分を無視）[m/s]
+    deadband_angular: 0.1       # これより小さい回る速さは 0 [rad/s]
+    # ---- フレームと TF ----
+    publish_tf: false           # EKF（robot_localization）が odom→base_link を出すので false
+    odom_frame: odom
+    base_frame: base_link
+    imu_frame: imu_link
+    gyro_calibration_sec: 2.0   # 接続直後にジャイロのずれを測る時間（動かさない）

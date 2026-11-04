@@ -1,0 +1,20 @@
+# 地図の上の仕事（roomba_tasks の task_manager）
+tasks:
+  ros__parameters:
+    # くまなく掃除
+    lane_spacing: 0.10          # [m] レーンの間隔（メインブラシの幅 11.4 cm より少し狭く。広げると早く終わるが塗り残しが出る）
+    clearance_margin: 0.03      # [m] 壁との余裕（robot_radius に足す。小さすぎると壁際で止まりやすい）
+    lane_angle_deg: -1.0        # レーンの向き [度]（地図の x 軸から反時計回り）。-1 なら折り返しが一番少ない向きを自動で選ぶ
+    free_threshold: 25          # 地図の値がこれより小さいマスを「空き」とみなす
+    min_lane_length: 0.05       # [m] これより短いレーンは走らない
+    skip_distance: 0.4          # [m] 進めなくなったら、この距離ずつ先から再開する
+    max_retries: 5              # 続けて何回まで再開を試すか
+    # ブラシ（/brush に出す。pico_bridge が Pico へ送る）
+    brush_with_coverage: true   # くまなく掃除のあいだブラシを回す
+    brush_main: 0.8             # メインブラシの強さ（-1.0〜1.0、マイナスで逆回転）
+    brush_side: 0.6             # サイドブラシの強さ
+    # ウェイポイント
+    loop_waypoints: false       # true にすると、最後の点まで行ったらまた最初から回る（見回り）
+    # クリックした点の保存先（/tasks/save と /tasks/load）
+    points_file: ~/roomba_ws/maps/points.txt
+    load_points_on_start: true

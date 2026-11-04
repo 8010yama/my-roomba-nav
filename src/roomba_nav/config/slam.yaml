@@ -1,0 +1,37 @@
+# slam_toolbox（地図を作りながら自分の位置も出す）。書いていない項目は slam_toolbox の標準値。
+slam_toolbox:
+  ros__parameters:
+    solver_plugin: solver_plugins::CeresSolver
+    ceres_linear_solver: SPARSE_NORMAL_CHOLESKY
+    ceres_preconditioner: SCHUR_JACOBI
+    ceres_trust_strategy: LEVENBERG_MARQUARDT
+    ceres_dogleg_type: TRADITIONAL_DOGLEG
+    ceres_loss_function: None
+
+    odom_frame: odom
+    map_frame: map
+    base_frame: base_link
+    scan_topic: /scan_fixed      # 点の数をそろえたスキャン（laser_tools/scan_normalizer）
+    mode: mapping
+
+    resolution: 0.025            # 地図の 1 マス = 2.5 cm（狭い部屋向け。LD19 の精度ではこれより細かくしても意味が薄い）
+    max_laser_range: 10.0        # LD19 は 12 m まで。遠くは誤差が大きいので 10 m で切る
+    minimum_time_interval: 0.3
+    transform_publish_period: 0.02
+    map_update_interval: 2.0
+    transform_timeout: 0.2
+    tf_buffer_duration: 30.0
+    stack_size_to_use: 40000000
+
+    use_scan_matching: true
+    use_scan_barycenter: true
+    minimum_travel_distance: 0.15
+    minimum_travel_heading: 0.2
+    scan_buffer_size: 10
+    scan_buffer_maximum_scan_distance: 10.0
+    do_loop_closing: true
+
+    # ノイズ対策：1 マスを「壁」とするのは、そこを通ったレーザーのうち当たった割合がこれ以上のとき（標準 0.1）
+    # 上げると、たまにしか当たらない点（ノイズ・人の足など）が地図に残りにくくなる
+    occupancy_threshold: 0.25
+    min_pass_through: 2
