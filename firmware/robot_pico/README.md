@@ -4,7 +4,7 @@ MicroPython 版 `main.py` と同じ動きを C（Pico SDK）で書いたもの�
 
 | ファイル | 中身 |
 |---|---|
-| `robot_pico.uf2` | ビルド済みのファームウェア（Pico 2 / RP2350 用）。これを書き込む |
+| `robot_pico.uf2` | ビルド済みのファームウェア（Pico 2 / RP2350 用）。リポジトリには入れていないので、下の「作り直すとき」の手順でビルドして作る |
 | `flash_pico.sh` | ラズパイから（SSH でも）書き込むスクリプト |
 | `pico_term.py` | 手でコマンドを送って動きを確かめるツール |
 | `main.c`・`CMakeLists.txt` | ソース（作り直すとき用） |

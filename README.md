@@ -6,9 +6,14 @@ Raspberry Pi 5・Raspberry Pi Pico 2・2D LiDAR（LD19）で作った、家庭�
 機体（外装は Fusion で設計）、回路、足回りのマイコン、ROS 2 のノードまで一人で開発しています。
 
 <p align="center">
-  <img src="docs/images/robot_inside.jpg" width="480" alt="上ぶたを外した機体：Pico 2 と自作の基板、モータードライバ 2 枚、左右の駆動輪、前方のブラシ">
+  <img src="docs/images/robot_inside.jpg" width="480" alt="上ぶたを外した機体：Pico 2 を載せた自作の基板、ブラシ用モータドライバ 2 枚、左右の駆動輪とエンコーダ、メインブラシ">
 </p>
 <p align="center"><sub>上ぶたを外した状態。中央が Pico 2 を載せた自作のユニバーサル基板、左右が駆動輪とエンコーダ、上がメインブラシ、左下がサイドブラシ。</sub></p>
+
+<p align="center">
+  <img src="cad/roomba2.png" width="480" alt="Fusion で設計した機体の CAD モデル">
+</p>
+<p align="center"><sub>Fusion で設計した機体。部品はすべて 3D プリントで作った（<a href="cad">cad/</a>）。</sub></p>
 
 <!-- ここに走行中の地図・経路の GIF を入れる -->
 
@@ -57,7 +62,12 @@ flowchart LR
 | [`roomba_nav`](src/roomba_nav) | Python | ロボット一式・SLAM・地図走行の launch。Nav2 の標準設定をこのロボット用に書き換えて使う |
 | [`ldlidar_stl_ros2`](https://github.com/ldrobotSensorTeam/ldlidar_stl_ros2) | C++ | LiDAR のドライバ（**外部**、サブモジュール） |
 
-`ldlidar_stl_ros2` 以外はすべて自作です（約 3,000 行、テストを含む）。
+| フォルダ | 中身 |
+|---|---|
+| [`firmware/robot_pico`](firmware/robot_pico) | Pico 2 のファームウェア（C / Pico SDK）。タイヤの速度制御、エンコーダ、IMU、ブラシ |
+| [`cad`](cad) | 機体の 3D データ。`print/` に 3D プリント用の部品ごとの STL、`roomba2_assembly.stl` に組み立て後の全体 |
+
+`ldlidar_stl_ros2` 以外はすべて自作です。
 
 ## 工夫したところ
 
@@ -94,18 +104,77 @@ LD19 は 1 周ごとに点の数が変わるため、そのままでは slam_too
 - ブラシの指令が 1 秒途切れたらブラシを止める
 - 速度には上限（0.3 m/s、2.0 rad/s）をかける
 
+### 足回りのファームウェアを C で書き直す（`firmware/robot_pico`）
+
+最初は MicroPython で書いていましたが、タイヤを速く回すとエンコーダのカウントを取りこぼすため、C（Pico SDK）で書き直しました。
+
+- エンコーダは 2 相の両エッジを GPIO 割り込みで数える 4 逓倍
+- タイヤの速さは 50 Hz のループで、フィードフォワード ＋ PI 制御
+- PWM は 20 kHz（モータの音が耳に聞こえない周波数）
+- 1 秒以上プログラムが止まったら、ウォッチドッグで再起動してモータも止める
+
+> **注**：今リポジトリにある `main.c` は、ブラシの命令（`B`）と IMU の自動復帰を足す前の版です。実機で動いている最新版に、あとで差し替えます。
+
+ラズパイとの通信は 1 行 1 命令のテキスト（`W 1500 1500` で左右のタイヤを 1500 カウント/秒など）にしていて、付属の `pico_term.py` から手で打って動きを確かめられます。
+
 ### ROS に依存しない部分を切り出してテストする
 
 経路生成（`coverage.hpp`）、スキャンの並べ直し（`resample.hpp`）、差動二輪の計算（`diffdrive.hpp`）はヘッダーに切り出し、ROS なしで単体テストできるようにしています。
 
 ## ハードウェア
 
-- Raspberry Pi 5（ROS 2 Humble、コンテナ上で実行）
-- Raspberry Pi Pico 2（モーター・ブラシ・エンコーダ・IMU の制御）
-- LiDAR：LDROBOT LD19
-- 駆動：差動二輪、メインブラシ・サイドブラシ
-- 操作：Pro コントローラ
-- 外装：直径 30 cm、Fusion で設計
+| 部品 | 型番など | 役割 |
+|---|---|---|
+| メインのコンピュータ | Raspberry Pi 5 | ROS 2 Humble（コンテナ上）、SLAM・Nav2 |
+| マイコン | Raspberry Pi Pico 2 | タイヤ・ブラシ・エンコーダ・IMU の制御 |
+| LiDAR | LDROBOT LD19 | 周囲 360° の距離 |
+| IMU | LSM6DSV16X | 角速度・加速度（I2C） |
+| タイヤ用モータドライバ | DRV8835 | 左右の駆動輪（基板の上） |
+| ブラシ用モータドライバ | AE-DRV8835-P ×2 | メインブラシ・サイドブラシ |
+| 昇圧 | XC9306 | 電池から Pico 用の 5V を作る |
+| 駆動 | エンコーダ付き DC モータ ×2 | 差動二輪 |
+| 操作 | Pro コントローラ | 手動操作・ブラシ |
+| 機体 | 直径 30 cm、3D プリント | Fusion で設計 |
+
+### 回路
+
+基板はユニバーサル基板に手配線で作っています。
+
+```mermaid
+flowchart LR
+  BAT["電池"] --> XC["XC9306<br/>5V 昇圧"] --> D1["D1<br/>逆流防止"] --> PICO["Pico 2<br/>VSYS"]
+  BAT --> DRVW["DRV8835<br/>タイヤ用"]
+  BAT --> DRVB["AE-DRV8835-P ×2<br/>ブラシ用"]
+  PICO -->|"PWM ×4"| DRVW --> MW["左右のモータ"]
+  MW -->|"エンコーダ A/B ×2"| PICO
+  PICO -->|"PWM・向き"| DRVB --> MB["メイン・サイドブラシ"]
+  IMU["LSM6DSV16X"] <-->|"I2C"| PICO
+  PICO <-->|"USB シリアル"| PI["Raspberry Pi 5"]
+  LIDAR["LD19"] -->|"USB シリアル"| PI
+```
+
+D1 は、Pico がラズパイの USB からも給電されるため、USB の 5V が電池側へ流れ込まないように入れています。
+
+**Pico 2 のピン割り当て**
+
+| GP | つなぎ先 | 内容 |
+|---|---|---|
+| 2 | IMU SDA | I2C1（アドレス 0x6B） |
+| 3 | IMU SCL | I2C1 |
+| 4 | 左エンコーダ C2 | |
+| 5 | 左エンコーダ C1 | 左は前進でプラスになるよう向きを反転 |
+| 10 | DRV8835 AIN1 | 左モータ 前進側（PWM） |
+| 11 | DRV8835 AIN2 | 左モータ 後退側（PWM） |
+| 12 | DRV8835 BIN1 | 右モータ 後退側（PWM） |
+| 13 | DRV8835 BIN2 | 右モータ 前進側（PWM） |
+| 17 | サイドブラシ用ドライバ IN1（PHASE） | サイドブラシの向き |
+| 18 | サイドブラシ用ドライバ IN2（ENABLE） | サイドブラシの速さ（PWM） |
+| 19 | メインブラシ用ドライバ IN2（ENABLE） | メインブラシの速さ（PWM） |
+| 20 | 右エンコーダ C1 | |
+| 21 | 右エンコーダ C2 | |
+| 22 | メインブラシ用ドライバ IN1（PHASE） | メインブラシの向き（毛が絡んだら逆回転） |
+
+タイヤ用は IN/IN モード、ブラシ用は PHASE/ENABLE モードで使っています。
 
 ## 動かし方
 
