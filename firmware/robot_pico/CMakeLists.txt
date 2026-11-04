@@ -1,0 +1,13 @@
+cmake_minimum_required(VERSION 3.13)
+set(PICO_BOARD pico2 CACHE STRING "Board type")
+include(pico_sdk_import.cmake)
+project(robot_pico C CXX ASM)
+set(CMAKE_C_STANDARD 11)
+pico_sdk_init()
+
+add_executable(robot_pico main.c)
+target_link_libraries(robot_pico pico_stdlib hardware_pwm hardware_i2c hardware_watchdog)
+target_compile_options(robot_pico PRIVATE -Wall -Wextra -Wno-unused-parameter)
+pico_enable_stdio_usb(robot_pico 1)
+pico_enable_stdio_uart(robot_pico 0)
+pico_add_extra_outputs(robot_pico)
