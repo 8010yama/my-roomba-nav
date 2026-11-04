@@ -5,7 +5,12 @@ Raspberry Pi 5・Raspberry Pi Pico 2・2D LiDAR（LD19）で作った、家庭�
 
 機体（外装は Fusion で設計）、回路、足回りのマイコン、ROS 2 のノードまで一人で開発しています。
 
-<!-- ここに実機の写真と、走行中の地図・経路の GIF を入れる -->
+<p align="center">
+  <img src="docs/images/robot_inside.jpg" width="480" alt="上ぶたを外した機体：Pico 2 と自作の基板、モータードライバ 2 枚、左右の駆動輪、前方のブラシ">
+</p>
+<p align="center"><sub>上ぶたを外した状態。中央が Pico 2 を載せた自作のユニバーサル基板、左右が駆動輪とエンコーダ、上がメインブラシ、左下がサイドブラシ。</sub></p>
+
+<!-- ここに走行中の地図・経路の GIF を入れる -->
 
 ## できること
 
