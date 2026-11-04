@@ -1,5 +1,7 @@
 # my-roomba-nav：自作の自律移動お掃除ロボット（ROS 2）
 
+[![CI](https://github.com/8010yama/my-roomba-nav/actions/workflows/ci.yml/badge.svg)](https://github.com/8010yama/my-roomba-nav/actions/workflows/ci.yml)
+
 Raspberry Pi 5・Raspberry Pi Pico 2・2D LiDAR（LD19）で作った、家庭用お掃除ロボットのソフトウェア一式です。
 地図を作り、置かれた場所から自分の位置を見つけ、指定した範囲をくまなく掃除して、終わったら定位置に戻ります。
 
@@ -201,6 +203,18 @@ ros2 launch roomba_nav nav_map.launch.py    # 保存した地図の上で走る�
 colcon test --packages-select laser_tools pico_bridge roomba_tasks
 colcon test-result --verbose
 ```
+
+## CI
+
+push と Pull Request のたびに、GitHub Actions（[`.github/workflows/ci.yml`](.github/workflows/ci.yml)）で次の 3 つを自動で走らせています。
+
+| ジョブ | 中身 |
+|---|---|
+| 単体テスト | ROS に依存しない部分（経路生成・スキャンの並べ直し・差動二輪の計算）のテスト。警告をエラー扱いにし、AddressSanitizer と UndefinedBehaviorSanitizer でメモリの不正アクセスや未定義動作も検出する |
+| ROS 2 Humble | 実機と同じ ROS 2 Humble のコンテナで、全パッケージを colcon でビルドし、gtest を走らせる |
+| ファームウェア | Pico SDK で Pico 2 のファームウェアをビルドし、`.uf2` を成果物として残す |
+
+`v` から始まるタグ（例：`v1.0.0`）を push すると、3 つとも通ったときだけ、ファームウェアの `.uf2` を Release に添付して配布します。
 
 ## ライセンス
 

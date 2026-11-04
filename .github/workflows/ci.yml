@@ -1,0 +1,122 @@
+# push・Pull Request のたびに、ビルドとテストを自動で走らせる。
+# v から始まるタグ（例 v1.0.0）を push すると、ファームウェアを Release に添付して配布する。
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # 1. ROS に依存しない部分（経路生成・スキャンの並べ直し・差動二輪の計算）を、
+  #    警告をエラー扱いにし、メモリの不正アクセスと未定義動作を検出しながらテストする。数十秒で終わる。
+  unit-tests:
+    name: 単体テスト（ROS なし・サニタイザ付き）
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: ビルドして実行
+        run: |
+          set -e
+          for t in laser_tools:test_resample pico_bridge:test_diffdrive roomba_tasks:test_coverage; do
+            pkg=${t%%:*}; name=${t##*:}
+            echo "::group::$pkg / $name"
+            g++ -std=c++17 -O1 -g -Wall -Wextra -Wpedantic -Werror \
+                -fsanitize=address,undefined -fno-sanitize-recover=all \
+                -I src/$pkg/include src/$pkg/test/$name.cpp -o $name
+            ./$name
+            echo "::endgroup::"
+          done
+
+  # 2. 実機と同じ ROS 2 Humble の環境で、全パッケージを colcon でビルドし、gtest を走らせる。
+  ros2:
+    name: ROS 2 Humble でビルドとテスト
+    runs-on: ubuntu-24.04
+    container: ros:humble
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: git を入れる（サブモジュールの取得に必要）
+        run: apt-get update && apt-get install -y --no-install-recommends git
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: 依存パッケージを入れる（ビルドとテストに要るものだけ）
+        run: |
+          source /opt/ros/humble/setup.bash
+          rosdep update --rosdistro humble
+          rosdep install --from-paths src --ignore-src -y --rosdistro humble \
+            --dependency-types build --dependency-types buildtool \
+            --dependency-types build_export --dependency-types test
+      - name: ビルド
+        run: |
+          source /opt/ros/humble/setup.bash
+          colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release --event-handlers console_cohesion+
+      - name: テスト
+        run: |
+          source /opt/ros/humble/setup.bash
+          colcon test --packages-select laser_tools pico_bridge roomba_tasks --event-handlers console_direct+
+          colcon test-result --verbose
+          # gtest が見つからずにテストが飛ばされていないか（3 つとも結果が出ているか）
+          n=$(colcon test-result --all | grep -c '\.gtest\.xml' || true)
+          echo "テスト結果のファイル: $n 個"
+          test "$n" -ge 3
+
+  # 3. Pico 2 のファームウェアをビルドし、.uf2 を成果物として残す。
+  firmware:
+    name: ファームウェアのビルド（Pico SDK）
+    runs-on: ubuntu-24.04
+    env:
+      PICO_SDK_VERSION: "2.1.1"
+    steps:
+      - uses: actions/checkout@v4
+      - name: ツールを入れる
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gcc-arm-none-eabi libnewlib-arm-none-eabi cmake ninja-build
+      - name: Pico SDK をキャッシュから取る
+        id: sdk-cache
+        uses: actions/cache@v4
+        with:
+          path: pico-sdk
+          key: pico-sdk-${{ env.PICO_SDK_VERSION }}
+      - name: Pico SDK を取ってくる
+        if: steps.sdk-cache.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 --branch "$PICO_SDK_VERSION" https://github.com/raspberrypi/pico-sdk.git
+          git -C pico-sdk submodule update --init --depth 1 lib/tinyusb
+      - name: ビルド
+        run: |
+          export PICO_SDK_PATH=$PWD/pico-sdk
+          cmake -S firmware/robot_pico -B firmware/robot_pico/build -G Ninja
+          cmake --build firmware/robot_pico/build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: robot_pico-firmware
+          path: |
+            firmware/robot_pico/build/robot_pico.uf2
+            firmware/robot_pico/build/robot_pico.elf
+
+  # 4. タグを push したときだけ：全部通ったら、ファームウェアを GitHub の Release に添付する。
+  release:
+    name: Release（タグのときだけ）
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [unit-tests, ros2, firmware]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: robot_pico-firmware
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: robot_pico.uf2
+          generate_release_notes: true
