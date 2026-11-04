@@ -15,8 +15,8 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='alia',
-    maintainer_email='pokimaruy8@gmail.com',
+    maintainer='Yamato Hiraiwa',
+    maintainer_email='yamato.washizu8010@gmail.com',
     description='Self-made Roomba bringup and navigation',
     license='MIT',
 )

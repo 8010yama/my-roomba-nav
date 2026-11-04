@@ -4,7 +4,7 @@
   <name>laser_tools</name>
   <version>0.1.0</version>
   <description>LiDAR helpers. scan_normalizer: resample LaserScan to a fixed number of beams (for LD06/LD19 with slam_toolbox).</description>
-  <maintainer email="pokimaruy8@gmail.com">alia</maintainer>
+  <maintainer email="yamato.washizu8010@gmail.com">Yamato Hiraiwa</maintainer>
   <license>MIT</license>
   <buildtool_depend>ament_cmake</buildtool_depend>
   <depend>rclcpp</depend>

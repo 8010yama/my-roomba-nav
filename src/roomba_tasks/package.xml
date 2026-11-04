@@ -4,7 +4,7 @@
   <name>roomba_tasks</name>
   <version>0.1.0</version>
   <description>Tasks on a saved map: follow clicked waypoints, or sweep an area completely (boustrophedon coverage) through Nav2.</description>
-  <maintainer email="pokimaruy8@gmail.com">alia</maintainer>
+  <maintainer email="yamato.washizu8010@gmail.com">Yamato Hiraiwa</maintainer>
   <license>MIT</license>
   <buildtool_depend>ament_cmake</buildtool_depend>
   <depend>rclcpp</depend>

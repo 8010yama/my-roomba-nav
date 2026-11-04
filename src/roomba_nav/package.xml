@@ -4,7 +4,7 @@
   <name>roomba_nav</name>
   <version>0.1.0</version>
   <description>Self-made Roomba: robot bringup (drive base + LD19 LiDAR + Pro Controller) SLAM + Nav2 navigation, and navigation on a saved map (map_server + AMCL).</description>
-  <maintainer email="pokimaruy8@gmail.com">alia</maintainer>
+  <maintainer email="yamato.washizu8010@gmail.com">Yamato Hiraiwa</maintainer>
   <license>MIT</license>
   <exec_depend>pico_bridge</exec_depend>
   <exec_depend>ldlidar_stl_ros2</exec_depend>

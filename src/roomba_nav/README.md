@@ -20,7 +20,7 @@ source install/setup.bash
 ros2 launch roomba_nav robot.launch.py
 ```
 
-Windows の Foxglove で `ws://192.168.3.4:8765` に接続 → 3D パネル。表示フレーム `base_link` で `/scan` を表示。
+Windows の Foxglove で `ws://<ラズパイの IP>:8765` に接続 → 3D パネル。表示フレーム `base_link` で `/scan` を表示。
 **ロボットの真正面に物を置いて、それが画面の +x（赤い軸の向き）に出るか確かめる。**
 ずれていたら LiDAR の向きを launch 引数で直す：
 

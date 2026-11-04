@@ -4,7 +4,7 @@
   <name>pico_bridge</name>
   <version>0.2.0</version>
   <description>Raspberry Pi Pico 2 drive base bridge (C++): /cmd_vel to wheel commands, /odom and /imu/data out.</description>
-  <maintainer email="pokimaruy8@gmail.com">alia</maintainer>
+  <maintainer email="yamato.washizu8010@gmail.com">Yamato Hiraiwa</maintainer>
   <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

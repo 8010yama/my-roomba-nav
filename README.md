@@ -180,7 +180,7 @@ D1 は、Pico がラズパイの USB からも給電されるため、USB の 5V
 
 ```bash
 mkdir -p ~/roomba_ws && cd ~/roomba_ws
-git clone --recursive git@github.com:8010yama/my-roomba-nav.git .
+git clone --recursive https://github.com/8010yama/my-roomba-nav.git .
 colcon build
 source install/setup.bash
 
@@ -201,3 +201,10 @@ ros2 launch roomba_nav nav_map.launch.py    # 保存した地図の上で走る�
 colcon test --packages-select laser_tools pico_bridge roomba_tasks
 colcon test-result --verbose
 ```
+
+## ライセンス
+
+[MIT](LICENSE)。ただし、外部のものはそれぞれのライセンスに従います。
+
+- `src/ldlidar_stl_ros2`：LDROBOT のドライバ（サブモジュール）
+- `firmware/robot_pico/pico_sdk_import.cmake`：Raspberry Pi の Pico SDK に含まれるファイル（BSD-3-Clause）
